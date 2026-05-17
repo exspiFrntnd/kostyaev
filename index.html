@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=yes"
+    />
+    <title>Космическое Путешествие | Зодиак и даты</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Montserrat:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <canvas id="stars-canvas"></canvas>
+    <div id="planets-container"></div>
+
+    <main>
+      <section id="hero">
+        <canvas id="hero-canvas"></canvas>
+        <div class="hero-content">
+          <h1>Добро пожаловать в бескрайний космос</h1>
+          <p>Исследуйте тайны вселенной вместе с нами</p>
+        </div>
+      </section>
+
+      <section id="sky-by-date" class="content-section">
+        <div class="container">
+          <h2>🌙 Ночное небо в выбранную дату</h2>
+          <p>
+            Выберите дату, и уникальный алгоритм создаст неповторимую картину
+            звёздного неба. Каждая дата — своё расположение звёзд, яркость и
+            узоры.
+          </p>
+          <div class="date-sky-picker">
+            <input type="date" id="date-picker" aria-label="Выберите дату" />
+            <button id="generate-sky">✨ Показать звёздный узор ✨</button>
+          </div>
+        </div>
+        <div class="full-width-stars">
+          <canvas
+            id="starCanvas"
+            width="1100"
+            height="500"
+            style="width: 100%; aspect-ratio: 1100/500"
+          ></canvas>
+        </div>
+        <div class="container">
+          <div id="sky-info">
+            <p>
+              🌌 Каждая дата создаёт уникальную конфигурацию звёзд и мерцание.
+              Наслаждайтесь чистым неповторимым узором ночного неба.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="facts-section" class="content-section">
+        <div class="container">
+          <h2>🔭 Удивительные факты о космосе</h2>
+          <div class="facts-slider-container">
+            <button class="slider-btn slider-left" aria-label="Назад">‹</button>
+            <div class="facts-slider" id="factsSlider"></div>
+            <button class="slider-btn slider-right" aria-label="Вперед">
+              ›
+            </button>
+          </div>
+          <div class="slider-dots" id="sliderDots"></div>
+        </div>
+      </section>
+
+      <section id="zodiac-signs" class="content-section">
+        <div class="container">
+          <h2>♌ Зодиакальный круг ♓</h2>
+          <p style="text-align: center; margin-bottom: 1rem">
+            Наведите на карточку, чтобы узнать тайну знака. Каждый символ хранит
+            древнюю энергию космоса.
+          </p>
+          <div class="zodiac-grid" id="zodiacGrid"></div>
+        </div>
+      </section>
+
+      <section id="zodiac-finder" class="content-section">
+        <div class="container">
+          <h2>🌀 Ваш астрологический ориентир</h2>
+          <p style="text-align: center">
+            Выберите дату рождения или любую дату, и мы раскроем ваш
+            зодиакальный знак.
+          </p>
+          <div class="zodiac-detector">
+            <div class="detector-controls">
+              <input
+                type="date"
+                id="zodiac-date-input"
+                aria-label="Дата для определения знака"
+              />
+              <button id="find-zodiac-btn" class="zodiac-submit">
+                ✨ Узнать знак ✨
+              </button>
+            </div>
+            <div id="zodiac-result" class="result-card">
+              <div class="result-symbol">✨</div>
+              <div class="result-info">
+                <h3>Ждите откровения</h3>
+                <p>
+                  Выберите дату и нажмите на кнопку, чтобы увидеть ваш знак
+                  зодиака с детальным описанием.
+                </p>
+                <span class="result-dates">даты правления</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        © 2026 Астрономический проект | Генерация звёздного неба на основе
+        астрономического seed-алгоритма
+      </p>
+    </footer>
+
+    <script src="js/main.js"></script>
+  </body>
+</html>
