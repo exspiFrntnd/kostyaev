@@ -725,3 +725,44 @@ footer {
     padding: 0.6rem 1.2rem;
   }
 }
+
+/* ===== Мобильная оптимизация: отключаем тяжёлые эффекты ===== */
+@media (max-width: 768px) {
+  .zodiac-card:hover {
+    transform: none;
+  }
+  .zodiac-overlay {
+    display: none;
+  }
+  .fact-slide:hover {
+    transform: none;
+  }
+  .fact-slide:hover img {
+    transform: none;
+  }
+  .fact-overlay {
+    display: none;
+  }
+  button:hover::before,
+  .random-fact-btn:hover::before,
+  .date-sky-picker button:hover::before,
+  #random-fact:hover::before,
+  .zodiac-submit:hover::before {
+    left: -100%;
+  }
+  button:hover,
+  .random-fact-btn:hover,
+  .date-sky-picker button:hover,
+  #random-fact:hover,
+  .zodiac-submit:hover {
+    transform: none;
+    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
+  }
+  .planet {
+    will-change: transform;
+    transform: translateZ(0);
+  }
+  .facts-slider {
+    scroll-snap-type: x mandatory;
+  }
+}
