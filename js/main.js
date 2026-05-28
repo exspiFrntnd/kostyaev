@@ -20,7 +20,6 @@ class HeroNebula {
     this.meteors = [];
     this.isMobile = isMobile();
     this.resize();
-    // Уменьшаем количество объектов для мобильных
     this.initStars(this.isMobile ? 200 : 1200);
     this.initPlanets(this.isMobile ? 1 : 5);
     if (!this.isMobile) this.initMeteors(8);
@@ -254,7 +253,7 @@ class ScrollAnimator {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add("visible");
-            observer.unobserve(entry.target); // отключаем наблюдение после появления
+            observer.unobserve(entry.target);
           }
         });
       },
@@ -264,7 +263,7 @@ class ScrollAnimator {
   }
 }
 
-// ========== ЗВЁЗДНАЯ КАРТА ПО ДАТЕ (с мерцанием для всех устройств) ==========
+// ========== ЗВЁЗДНАЯ КАРТА ПО ДАТЕ (оптимизировано для мобильных + 3 цвета) ==========
 class StarDateMap {
   constructor(canvasId) {
     this.canvas = document.getElementById(canvasId);
@@ -298,25 +297,32 @@ class StarDateMap {
       return min + (x - Math.floor(x)) * (max - min);
     };
     let starArr = [];
-    const starCount = this.isMobile ? 300 : 720;
+    const starCount = this.isMobile ? 180 : 720;
     for (let i = 0; i < starCount; i++) {
       const baseBright = rnd(0.5, 1, i * 59);
+      let col;
+      if (this.isMobile) {
+        const colorType = Math.floor(rnd(0, 3, i * 73));
+        if (colorType === 0) col = { r: 255, g: 255, b: 255 };     // белый
+        else if (colorType === 1) col = { r: 255, g: 220, b: 150 }; // тёплый
+        else col = { r: 180, g: 210, b: 255 };                      // голубоватый
+      } else {
+        let t = Math.floor(rnd(0, 4, i * 73));
+        col = t === 0
+          ? { r: 255, g: 220, b: 150 }
+          : t === 1
+            ? { r: 180, g: 210, b: 255 }
+            : { r: 245, g: 245, b: 245 };
+      }
       starArr.push({
         x: rnd(0.03, 0.97, i * 11),
         y: rnd(0.03, 0.97, i * 23 + 50),
-        rad: rnd(0.7, this.isMobile ? 2.0 : 3.2, i * 37),
+        rad: rnd(0.7, this.isMobile ? 1.5 : 3.2, i * 37),
         baseBright: baseBright,
         bright: baseBright,
         speed: 0.002 + rnd(0, 0.008, i * 113),
         phase: rnd(0, Math.PI * 2, i * 131),
-        col: (() => {
-          let t = Math.floor(rnd(0, 4, i * 73));
-          return t === 0
-            ? { r: 255, g: 220, b: 150 }
-            : t === 1
-              ? { r: 180, g: 210, b: 255 }
-              : { r: 245, g: 245, b: 245 };
-        })(),
+        col: col,
       });
     }
     this.stars = starArr;
@@ -347,7 +353,7 @@ class StarDateMap {
       this.ctx.arc(x, y, s.rad, 0, Math.PI * 2);
       this.ctx.fillStyle = `rgba(${s.col.r},${s.col.g},${s.col.b},${s.bright})`;
       this.ctx.fill();
-      if (s.rad > 1.6) {
+      if (!this.isMobile && s.rad > 1.6) {
         this.ctx.beginPath();
         this.ctx.arc(x, y, s.rad * 0.5, 0, Math.PI * 2);
         this.ctx.fillStyle = `rgba(255,240,180,${s.bright * 0.6})`;
@@ -375,7 +381,7 @@ class StarDateMap {
     this.mobileInterval = setInterval(() => {
       this.updateTwinkle();
       this.drawStars();
-    }, 100); // ~10 FPS, ещё легче
+    }, 33);
   }
   stopAnimation() {
     if (this.animationId) {
@@ -747,19 +753,15 @@ document.addEventListener("DOMContentLoaded", () => {
     new Planet(planetsContainer, getSaturnSVG(), 380, 28);
     new Planet(planetsContainer, getEarthSVG(), 560, 38);
   }
-  // Intersection Observer включаем только на десктопе и один раз
   if (!isMobile()) {
     new ScrollAnimator();
   } else {
-    // На мобильных показываем секции сразу и без анимации
     document.querySelectorAll(".content-section").forEach((section) => {
       section.classList.add("visible");
     });
-    // Добавляем обработчики кликов для карточек (мобильные)
     document.querySelectorAll(".zodiac-card").forEach((card) => {
       card.addEventListener("click", (e) => {
         e.stopPropagation();
-        // Убираем активный класс у всех карточек
         document
           .querySelectorAll(".zodiac-card")
           .forEach((c) => c.classList.remove("active"));
@@ -775,7 +777,6 @@ document.addEventListener("DOMContentLoaded", () => {
         slide.classList.add("active");
       });
     });
-    // Закрываем оверлеи при клике вне карточек
     document.addEventListener("click", (e) => {
       if (!e.target.closest(".zodiac-card")) {
         document
