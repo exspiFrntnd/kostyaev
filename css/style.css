@@ -379,7 +379,8 @@ input:hover {
   border-radius: 1.8rem;
 }
 
-.zodiac-card:hover .zodiac-overlay {
+.zodiac-card:hover .zodiac-overlay,
+.zodiac-card.active .zodiac-overlay {
   opacity: 1;
 }
 
@@ -579,7 +580,8 @@ input:hover {
   pointer-events: none;
 }
 
-.fact-slide:hover .fact-overlay {
+.fact-slide:hover .fact-overlay,
+.fact-slide.active .fact-overlay {
   opacity: 1;
 }
 
@@ -731,17 +733,11 @@ footer {
   .zodiac-card:hover {
     transform: none;
   }
-  .zodiac-overlay {
-    display: none;
-  }
   .fact-slide:hover {
     transform: none;
   }
   .fact-slide:hover img {
     transform: none;
-  }
-  .fact-overlay {
-    display: none;
   }
   button:hover::before,
   .random-fact-btn:hover::before,
@@ -765,14 +761,4 @@ footer {
   .facts-slider {
     scroll-snap-type: x mandatory;
   }
-}
-
-/* Прелоадер для слайдера (опционально) */
-.facts-slider.loading {
-  min-height: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 1.8rem;
 }
