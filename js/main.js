@@ -1,3 +1,12 @@
+// ========== ОПРЕДЕЛЕНИЕ МОБИЛЬНОГО УСТРОЙСТВА ==========
+function isMobile() {
+  return (
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent,
+    ) || window.innerWidth <= 768
+  );
+}
+
 // ========== АНИМАЦИЯ ГЕРОЯ (туманность, звёзды, метеоры) ==========
 class HeroNebula {
   constructor(canvasId) {
@@ -9,9 +18,11 @@ class HeroNebula {
     this.stars = [];
     this.planets = [];
     this.meteors = [];
+    this.isMobile = isMobile();
     this.resize();
-    this.initStars(1200);
-    this.initPlanets(5);
+    this.initStars(this.isMobile ? 400 : 1200);
+    this.initPlanets(this.isMobile ? 2 : 5);
+    if (!this.isMobile) this.initMeteors(8);
     window.addEventListener("resize", () => this.resize());
     this.animate();
   }
@@ -20,7 +31,7 @@ class HeroNebula {
     this.height = window.innerHeight;
     this.canvas.width = this.width;
     this.canvas.height = this.height;
-    this.initMeteors(8);
+    if (!this.isMobile) this.initMeteors(8);
   }
   initStars(count) {
     this.stars = [];
@@ -28,7 +39,7 @@ class HeroNebula {
       this.stars.push({
         x: Math.random() * this.width,
         y: Math.random() * this.height,
-        radius: 0.5 + Math.random() * 2,
+        radius: 0.5 + Math.random() * (this.isMobile ? 1.5 : 2),
         alpha: 0.3 + Math.random() * 0.7,
         speed: 0.002 + Math.random() * 0.01,
         phase: Math.random() * Math.PI * 2,
@@ -50,7 +61,8 @@ class HeroNebula {
       this.planets.push({
         x: Math.random() * this.width,
         y: Math.random() * this.height,
-        radius: 5 + Math.random() * 18,
+        radius:
+          (this.isMobile ? 3 : 5) + Math.random() * (this.isMobile ? 10 : 18),
         speedX: (Math.random() - 0.5) * 0.1,
         speedY: (Math.random() - 0.5) * 0.07,
         color: colors[Math.floor(Math.random() * colors.length)],
@@ -75,7 +87,8 @@ class HeroNebula {
     grad.addColorStop(1, "#0a0a1a");
     this.ctx.fillStyle = grad;
     this.ctx.fillRect(0, 0, this.width, this.height);
-    for (let i = 0; i < 8; i++) {
+    const nebulaCount = this.isMobile ? 3 : 8;
+    for (let i = 0; i < nebulaCount; i++) {
       let x = this.width * (0.2 + Math.sin(this.time * 0.0001 + i) * 0.2),
         y = this.height * (0.4 + Math.cos(this.time * 0.00008 + i) * 0.3),
         rad = this.width * 0.3;
@@ -115,6 +128,7 @@ class HeroNebula {
     }
   }
   drawMeteors() {
+    if (!this.meteors) return;
     for (let m of this.meteors) {
       let tailX = m.x - m.vx * m.length,
         tailY = m.y - m.vy * m.length;
@@ -152,7 +166,7 @@ class HeroNebula {
     this.drawBackground();
     this.drawStars();
     this.drawPlanets();
-    this.drawMeteors();
+    if (!this.isMobile) this.drawMeteors();
     requestAnimationFrame(() => this.animate());
   }
 }
@@ -162,7 +176,11 @@ class StarBackground {
   constructor(canvasId, config = {}) {
     this.canvas = document.getElementById(canvasId);
     this.ctx = this.canvas.getContext("2d");
-    this.config = { starCount: config.starCount || 550, starMaxRadius: 2.5 };
+    this.isMobile = isMobile();
+    this.config = {
+      starCount: this.isMobile ? 200 : config.starCount || 550,
+      starMaxRadius: this.isMobile ? 1.5 : 2.5,
+    };
     this.stars = [];
     this.init();
   }
@@ -226,7 +244,7 @@ class Planet {
   }
 }
 
-// ========== АНИМАЦИЯ ПОЯВЛЕНИЯ СЕКЦИЙ ==========
+// ========== АНИМАЦИЯ ПОЯВЛЕНИЯ СЕКЦИЙ (отключаем на мобильных) ==========
 class ScrollAnimator {
   constructor() {
     const elements = document.querySelectorAll(".content-section");
@@ -245,15 +263,21 @@ class ScrollAnimator {
   }
 }
 
-// ========== ЗВЁЗДНАЯ КАРТА ПО ДАТЕ ==========
+// ========== ЗВЁЗДНАЯ КАРТА ПО ДАТЕ (без анимации на мобильных) ==========
 class StarDateMap {
   constructor(canvasId) {
     this.canvas = document.getElementById(canvasId);
     this.ctx = this.canvas.getContext("2d");
     this.stars = [];
     this.animationId = null;
-    window.addEventListener("resize", () => this.resizeCanvasAndRedraw());
+    this.isMobile = isMobile();
+    this.resizeDebounce = null;
+    window.addEventListener("resize", () => this.handleResize());
     this.resizeCanvasAndRedraw();
+  }
+  handleResize() {
+    if (this.resizeDebounce) clearTimeout(this.resizeDebounce);
+    this.resizeDebounce = setTimeout(() => this.resizeCanvasAndRedraw(), 150);
   }
   resizeCanvasAndRedraw() {
     if (!this.canvas.parentElement) return;
@@ -261,7 +285,7 @@ class StarDateMap {
     if (w <= 0) return;
     this.canvas.width = w;
     this.canvas.height = w * 0.4545;
-    if (this.stars.length) this.drawStars(Date.now());
+    if (this.stars.length) this.drawStars();
   }
   generateByDate(dateStr) {
     let hash = 0;
@@ -272,11 +296,12 @@ class StarDateMap {
       return min + (x - Math.floor(x)) * (max - min);
     };
     let starArr = [];
-    for (let i = 0; i < 720; i++)
+    const starCount = this.isMobile ? 350 : 720;
+    for (let i = 0; i < starCount; i++)
       starArr.push({
         x: rnd(0.03, 0.97, i * 11),
         y: rnd(0.03, 0.97, i * 23 + 50),
-        rad: rnd(0.7, 3.2, i * 37),
+        rad: rnd(0.7, this.isMobile ? 2.2 : 3.2, i * 37),
         bright: rnd(0.5, 1, i * 59),
         col: (() => {
           let t = Math.floor(rnd(0, 4, i * 73));
@@ -286,15 +311,14 @@ class StarDateMap {
               ? { r: 180, g: 210, b: 255 }
               : { r: 245, g: 245, b: 245 };
         })(),
-        twSpeed: rnd(0.4, 2.2, i * 101),
-        phase: rnd(0, Math.PI * 2, i * 131),
       });
     this.stars = starArr;
-    this.startAnimation();
+    this.drawStars();
+    if (!this.isMobile) this.startAnimation();
     document.getElementById("sky-info").innerHTML =
-      `<p>✨ Ночное небо на ${dateStr}: уникальный узор из 720 звёзд с мерцанием.</p>`;
+      `<p>✨ Ночное небо на ${dateStr}: уникальный узор из ${starCount} звёзд${this.isMobile ? " (статичный)" : " с мерцанием"}.</p>`;
   }
-  drawStars(now) {
+  drawStars() {
     if (!this.ctx || !this.canvas.width) return;
     const w = this.canvas.width,
       h = this.canvas.height;
@@ -306,24 +330,23 @@ class StarDateMap {
     this.ctx.fillRect(0, 0, w, h);
     for (let s of this.stars) {
       let x = s.x * w,
-        y = s.y * h,
-        tw = 0.55 + 0.45 * Math.sin(now * 0.003 * s.twSpeed + s.phase);
+        y = s.y * h;
       this.ctx.beginPath();
       this.ctx.arc(x, y, s.rad, 0, Math.PI * 2);
-      this.ctx.fillStyle = `rgba(${s.col.r},${s.col.g},${s.col.b},${s.bright * tw})`;
+      this.ctx.fillStyle = `rgba(${s.col.r},${s.col.g},${s.col.b},${s.bright})`;
       this.ctx.fill();
       if (s.rad > 1.6) {
         this.ctx.beginPath();
         this.ctx.arc(x, y, s.rad * 0.5, 0, Math.PI * 2);
-        this.ctx.fillStyle = `rgba(255,240,180,${s.bright * tw * 0.6})`;
+        this.ctx.fillStyle = `rgba(255,240,180,${s.bright * 0.6})`;
         this.ctx.fill();
       }
     }
   }
   startAnimation() {
     if (this.animationId) cancelAnimationFrame(this.animationId);
-    const animate = (t) => {
-      this.drawStars(t);
+    const animate = () => {
+      this.drawStars();
       this.animationId = requestAnimationFrame(animate);
     };
     this.animationId = requestAnimationFrame(animate);
@@ -473,7 +496,7 @@ function updateZodiacDisplay(date) {
   }
 }
 
-// ========== СЛАЙДЕР ФАКТОВ (исправленный) ==========
+// ========== СЛАЙДЕР ФАКТОВ ==========
 class FactsSlider {
   constructor(containerId, dotsContainerId) {
     this.slider = document.getElementById(containerId);
@@ -678,7 +701,15 @@ document.addEventListener("DOMContentLoaded", () => {
     new Planet(planetsContainer, getSaturnSVG(), 380, 28);
     new Planet(planetsContainer, getEarthSVG(), 560, 38);
   }
-  new ScrollAnimator();
+  // Intersection Observer включаем только на десктопе
+  if (!isMobile()) {
+    new ScrollAnimator();
+  } else {
+    // На мобильных показываем секции сразу
+    document.querySelectorAll(".content-section").forEach((section) => {
+      section.classList.add("visible");
+    });
+  }
   const starMap = new StarDateMap("starCanvas");
   const datePicker = document.getElementById("date-picker");
   const generateBtn = document.getElementById("generate-sky");
