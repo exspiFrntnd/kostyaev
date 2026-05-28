@@ -20,8 +20,9 @@ class HeroNebula {
     this.meteors = [];
     this.isMobile = isMobile();
     this.resize();
-    this.initStars(this.isMobile ? 400 : 1200);
-    this.initPlanets(this.isMobile ? 2 : 5);
+    // Уменьшаем количество объектов для мобильных
+    this.initStars(this.isMobile ? 200 : 1200);
+    this.initPlanets(this.isMobile ? 1 : 5);
     if (!this.isMobile) this.initMeteors(8);
     window.addEventListener("resize", () => this.resize());
     this.animate();
@@ -39,7 +40,7 @@ class HeroNebula {
       this.stars.push({
         x: Math.random() * this.width,
         y: Math.random() * this.height,
-        radius: 0.5 + Math.random() * (this.isMobile ? 1.5 : 2),
+        radius: 0.5 + Math.random() * (this.isMobile ? 1.2 : 2),
         alpha: 0.3 + Math.random() * 0.7,
         speed: 0.002 + Math.random() * 0.01,
         phase: Math.random() * Math.PI * 2,
@@ -62,7 +63,7 @@ class HeroNebula {
         x: Math.random() * this.width,
         y: Math.random() * this.height,
         radius:
-          (this.isMobile ? 3 : 5) + Math.random() * (this.isMobile ? 10 : 18),
+          (this.isMobile ? 3 : 5) + Math.random() * (this.isMobile ? 8 : 18),
         speedX: (Math.random() - 0.5) * 0.1,
         speedY: (Math.random() - 0.5) * 0.07,
         color: colors[Math.floor(Math.random() * colors.length)],
@@ -87,7 +88,7 @@ class HeroNebula {
     grad.addColorStop(1, "#0a0a1a");
     this.ctx.fillStyle = grad;
     this.ctx.fillRect(0, 0, this.width, this.height);
-    const nebulaCount = this.isMobile ? 3 : 8;
+    const nebulaCount = this.isMobile ? 2 : 8;
     for (let i = 0; i < nebulaCount; i++) {
       let x = this.width * (0.2 + Math.sin(this.time * 0.0001 + i) * 0.2),
         y = this.height * (0.4 + Math.cos(this.time * 0.00008 + i) * 0.3),
@@ -178,8 +179,8 @@ class StarBackground {
     this.ctx = this.canvas.getContext("2d");
     this.isMobile = isMobile();
     this.config = {
-      starCount: this.isMobile ? 200 : config.starCount || 550,
-      starMaxRadius: this.isMobile ? 1.5 : 2.5,
+      starCount: this.isMobile ? 120 : config.starCount || 550,
+      starMaxRadius: this.isMobile ? 1.2 : 2.5,
     };
     this.stars = [];
     this.init();
@@ -244,32 +245,33 @@ class Planet {
   }
 }
 
-// ========== АНИМАЦИЯ ПОЯВЛЕНИЯ СЕКЦИЙ (отключаем на мобильных) ==========
+// ========== АНИМАЦИЯ ПОЯВЛЕНИЯ СЕКЦИЙ (один раз, отключаем на мобильных) ==========
 class ScrollAnimator {
   constructor() {
     const elements = document.querySelectorAll(".content-section");
-    elements.forEach((el) =>
-      new IntersectionObserver(
-        (entries) => {
-          entries.forEach((e) =>
-            e.isIntersecting
-              ? e.target.classList.add("visible")
-              : e.target.classList.remove("visible"),
-          );
-        },
-        { threshold: 0.2 },
-      ).observe(el),
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+            observer.unobserve(entry.target); // отключаем наблюдение после появления
+          }
+        });
+      },
+      { threshold: 0.1 },
     );
+    elements.forEach((el) => observer.observe(el));
   }
 }
 
-// ========== ЗВЁЗДНАЯ КАРТА ПО ДАТЕ (с лёгким мерцанием на всех устройствах) ==========
+// ========== ЗВЁЗДНАЯ КАРТА ПО ДАТЕ (с мерцанием для всех устройств) ==========
 class StarDateMap {
   constructor(canvasId) {
     this.canvas = document.getElementById(canvasId);
     this.ctx = this.canvas.getContext("2d");
     this.stars = [];
     this.animationId = null;
+    this.mobileInterval = null;
     this.isMobile = isMobile();
     this.resizeDebounce = null;
     window.addEventListener("resize", () => this.handleResize());
@@ -285,7 +287,7 @@ class StarDateMap {
     if (w <= 0) return;
     this.canvas.width = w;
     this.canvas.height = w * 0.4545;
-    if (this.stars.length) this.drawStars(performance.now());
+    if (this.stars.length) this.drawStars();
   }
   generateByDate(dateStr) {
     let hash = 0;
@@ -296,16 +298,17 @@ class StarDateMap {
       return min + (x - Math.floor(x)) * (max - min);
     };
     let starArr = [];
-    const starCount = this.isMobile ? 350 : 720;
+    const starCount = this.isMobile ? 300 : 720;
     for (let i = 0; i < starCount; i++) {
-      // Добавляем параметры для мерцания
-      const twinkleSpeed = 0.002 + rnd(0, 0.008, i * 100);
-      const phase = rnd(0, Math.PI * 2, i * 200);
+      const baseBright = rnd(0.5, 1, i * 59);
       starArr.push({
         x: rnd(0.03, 0.97, i * 11),
         y: rnd(0.03, 0.97, i * 23 + 50),
-        rad: rnd(0.7, this.isMobile ? 2.2 : 3.2, i * 37),
-        bright: rnd(0.5, 1, i * 59),
+        rad: rnd(0.7, this.isMobile ? 2.0 : 3.2, i * 37),
+        baseBright: baseBright,
+        bright: baseBright,
+        speed: 0.002 + rnd(0, 0.008, i * 113),
+        phase: rnd(0, Math.PI * 2, i * 131),
         col: (() => {
           let t = Math.floor(rnd(0, 4, i * 73));
           return t === 0
@@ -314,16 +317,20 @@ class StarDateMap {
               ? { r: 180, g: 210, b: 255 }
               : { r: 245, g: 245, b: 245 };
         })(),
-        twinkleSpeed: twinkleSpeed,
-        phase: phase,
       });
     }
     this.stars = starArr;
-    this.startAnimation(); // всегда запускаем анимацию, чтобы звёзды мерцали
+    this.drawStars();
+    this.stopAnimation();
+    if (!this.isMobile) {
+      this.startAnimation();
+    } else {
+      this.startMobileAnimation();
+    }
     document.getElementById("sky-info").innerHTML =
-      `<p>✨ Ночное небо на ${dateStr}: уникальный узор из ${starCount} звёзд с мягким мерцанием.</p>`;
+      `<p>✨ Ночное небо на ${dateStr}: уникальный узор из ${starCount} звёзд с мерцанием.</p>`;
   }
-  drawStars(now) {
+  drawStars() {
     if (!this.ctx || !this.canvas.width) return;
     const w = this.canvas.width,
       h = this.canvas.height;
@@ -336,29 +343,49 @@ class StarDateMap {
     for (let s of this.stars) {
       let x = s.x * w,
         y = s.y * h;
-      // Мерцание: вычисляем текущую яркость
-      let twinkle =
-        0.65 + 0.35 * Math.sin(now * 0.003 * s.twinkleSpeed + s.phase);
-      let alpha = s.bright * twinkle;
       this.ctx.beginPath();
       this.ctx.arc(x, y, s.rad, 0, Math.PI * 2);
-      this.ctx.fillStyle = `rgba(${s.col.r},${s.col.g},${s.col.b},${alpha})`;
+      this.ctx.fillStyle = `rgba(${s.col.r},${s.col.g},${s.col.b},${s.bright})`;
       this.ctx.fill();
       if (s.rad > 1.6) {
         this.ctx.beginPath();
         this.ctx.arc(x, y, s.rad * 0.5, 0, Math.PI * 2);
-        this.ctx.fillStyle = `rgba(255,240,180,${alpha * 0.6})`;
+        this.ctx.fillStyle = `rgba(255,240,180,${s.bright * 0.6})`;
         this.ctx.fill();
       }
     }
   }
+  updateTwinkle() {
+    const now = performance.now();
+    for (let s of this.stars) {
+      s.bright = s.baseBright * (0.7 + 0.3 * Math.sin(now * s.speed + s.phase));
+    }
+  }
   startAnimation() {
     if (this.animationId) cancelAnimationFrame(this.animationId);
-    const animate = (t) => {
-      this.drawStars(t);
+    const animate = () => {
+      this.updateTwinkle();
+      this.drawStars();
       this.animationId = requestAnimationFrame(animate);
     };
     this.animationId = requestAnimationFrame(animate);
+  }
+  startMobileAnimation() {
+    if (this.mobileInterval) clearInterval(this.mobileInterval);
+    this.mobileInterval = setInterval(() => {
+      this.updateTwinkle();
+      this.drawStars();
+    }, 100); // ~10 FPS, ещё легче
+  }
+  stopAnimation() {
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+      this.animationId = null;
+    }
+    if (this.mobileInterval) {
+      clearInterval(this.mobileInterval);
+      this.mobileInterval = null;
+    }
   }
   updateDate(date) {
     this.generateByDate(date);
@@ -505,54 +532,102 @@ function updateZodiacDisplay(date) {
   }
 }
 
-// ========== ПРЕДЗАГРУЗКА ИЗОБРАЖЕНИЙ ДЛЯ СЛАЙДЕРА ==========
-function preloadImages(facts, placeholderSVG) {
-  const imagePromises = facts.map((fact) => {
-    return new Promise((resolve) => {
-      if (!fact.localFile) {
-        resolve();
-        return;
-      }
-      const img = new Image();
-      const src = `image/${encodeURIComponent(fact.localFile)}`;
-      img.onload = () => resolve();
-      img.onerror = () => {
-        // если изображение не загрузилось, используем плейсхолдер
-        fact.localFile = null; // помечаем, чтобы при рендере использовать плейсхолдер
-        resolve();
-      };
-      img.src = src;
-    });
-  });
-  return Promise.all(imagePromises);
-}
-
-// ========== СЛАЙДЕР ФАКТОВ (с предзагрузкой) ==========
+// ========== СЛАЙДЕР ФАКТОВ ==========
 class FactsSlider {
-  constructor(containerId, dotsContainerId, factsData, placeholderSVG) {
+  constructor(containerId, dotsContainerId) {
     this.slider = document.getElementById(containerId);
     this.dotsContainer = document.getElementById(dotsContainerId);
     this.leftBtn = document.querySelector(".slider-left");
     this.rightBtn = document.querySelector(".slider-right");
-    this.facts = factsData;
-    this.placeholderSVG = placeholderSVG;
+    this.facts = [
+      {
+        title: "Чёрная дыра",
+        desc: "Гравитация настолько сильна, что даже свет не может покинуть её пределы.",
+        localFile: "black-hole.jpg",
+      },
+      {
+        title: "Сверхновая",
+        desc: "Взрыв звезды в конце её жизни, временно затмевающий целую галактику.",
+        localFile: "stars-new.jpg",
+      },
+      {
+        title: "Столпы Творения",
+        desc: "Облака газа в Орлиной туманности, где рождаются новые звёзды.",
+        localFile: "stolpi.jpg",
+      },
+      {
+        title: "Туманность Ориона",
+        desc: "Ближайший к нам звёздный питомник, видимый невооружённым глазом.",
+        localFile: "Orion_Nebula_-_Hubble_2006_mosaic_18000.jpg",
+      },
+      {
+        title: "Галактика Андромеды",
+        desc: "Ближайшая крупная галактика, удалена на 2.5 млн световых лет.",
+        localFile: "Andromeda.jpg",
+      },
+      {
+        title: "Кольца Сатурна",
+        desc: "Состоят из водяного льда и камней, толщина до 1 км.",
+        localFile: "saturn-rings.jpg",
+      },
+      {
+        title: "Экзопланета",
+        desc: "Планеты за пределами Солнечной системы, некоторые пригодны для жизни.",
+        localFile: "Exzoplanete.jpg",
+      },
+      {
+        title: "Гамма-всплески",
+        desc: "Самые мощные взрывы во Вселенной после Большого взрыва.",
+        localFile: "GAMMA.jpg",
+      },
+      {
+        title: "Марсианский закат",
+        desc: "Закат на Марсе имеет голубоватый оттенок из-за рассеяния пыли.",
+        localFile: "Mars.jpg",
+      },
+      {
+        title: "Магеллановы облака",
+        desc: "Карликовые галактики-спутники Млечного Пути, видны в южном полушарии.",
+        localFile: "Magellanic_Clouds.jpg",
+      },
+      {
+        title: "Тёмная материя",
+        desc: "Невидимая субстанция, составляющая 27% массы Вселенной.",
+        localFile: "dark-materia.jpg",
+      },
+      {
+        title: "Квазары",
+        desc: "Ярчайшие ядра далёких галактик, питаемые сверхмассивными чёрными дырами.",
+        localFile: "qvasar.jpg",
+      },
+      {
+        title: "Нейтронная звезда",
+        desc: "Останки сверхновой, размером с город, но массой как Солнце.",
+        localFile: "Neitrone-stars.jpg",
+      },
+      {
+        title: "Большой аттрактор",
+        desc: "Гравитационная аномалия, притягивающая наш Млечный Путь.",
+        localFile: "Attraktor.jpg",
+      },
+      {
+        title: "Звезда Бетельгейзе",
+        desc: "Красный сверхгигант в созвездии Ориона, одна из самых больших известных звёзд.",
+        localFile: "Betelgeise.jpg",
+      },
+    ];
+    this.placeholderSVG =
+      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%231e1e3a'/%3E%3Ccircle cx='200' cy='150' r='60' fill='%23a855f7' opacity='0.6'/%3E%3Ctext x='200' y='160' font-size='20' fill='white' text-anchor='middle' font-family='monospace'%3E🌟%3C/text%3E%3Ctext x='200' y='200' font-size='14' fill='%23cbd5e1' text-anchor='middle'%3EИзображение недоступно%3C/text%3E%3C/svg%3E";
     this.currentIndex = 0;
-    // Показываем прелоадер
-    this.slider.classList.add("loading");
-    this.slider.innerHTML =
-      '<div style="text-align:center; padding:2rem;">Загрузка изображений... 🌌</div>';
-    // После загрузки всех изображений рендерим слайдер
-    preloadImages(this.facts, this.placeholderSVG).then(() => {
-      this.slider.classList.remove("loading");
-      this.renderSlides();
-      this.initDots();
-      this.initEvents();
-      this.updateActiveDot();
-      this.syncIndexOnScroll();
-      window.addEventListener("resize", () =>
-        this.scrollToSlide(this.currentIndex, false),
-      );
-    });
+    this.renderSlides();
+    this.initDots();
+    this.initEvents();
+    this.updateActiveDot();
+    this.syncIndexOnScroll();
+    window.addEventListener("resize", () =>
+      this.scrollToSlide(this.currentIndex, false),
+    );
+    this.preloadImages();
   }
   getLocalImagePath(localFile) {
     return localFile ? `image/${encodeURIComponent(localFile)}` : null;
@@ -579,6 +654,15 @@ class FactsSlider {
       slide.appendChild(img);
       slide.appendChild(overlay);
       this.slider.appendChild(slide);
+    });
+  }
+  preloadImages() {
+    const imagesToPreload = this.facts
+      .map((fact) => fact.localFile && this.getLocalImagePath(fact.localFile))
+      .filter(Boolean);
+    imagesToPreload.forEach((src) => {
+      const img = new Image();
+      img.src = src;
     });
   }
   initDots() {
@@ -663,13 +747,46 @@ document.addEventListener("DOMContentLoaded", () => {
     new Planet(planetsContainer, getSaturnSVG(), 380, 28);
     new Planet(planetsContainer, getEarthSVG(), 560, 38);
   }
-  // Intersection Observer включаем только на десктопе
+  // Intersection Observer включаем только на десктопе и один раз
   if (!isMobile()) {
     new ScrollAnimator();
   } else {
-    // На мобильных показываем секции сразу
+    // На мобильных показываем секции сразу и без анимации
     document.querySelectorAll(".content-section").forEach((section) => {
       section.classList.add("visible");
+    });
+    // Добавляем обработчики кликов для карточек (мобильные)
+    document.querySelectorAll(".zodiac-card").forEach((card) => {
+      card.addEventListener("click", (e) => {
+        e.stopPropagation();
+        // Убираем активный класс у всех карточек
+        document
+          .querySelectorAll(".zodiac-card")
+          .forEach((c) => c.classList.remove("active"));
+        card.classList.add("active");
+      });
+    });
+    document.querySelectorAll(".fact-slide").forEach((slide) => {
+      slide.addEventListener("click", (e) => {
+        e.stopPropagation();
+        document
+          .querySelectorAll(".fact-slide")
+          .forEach((s) => s.classList.remove("active"));
+        slide.classList.add("active");
+      });
+    });
+    // Закрываем оверлеи при клике вне карточек
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest(".zodiac-card")) {
+        document
+          .querySelectorAll(".zodiac-card")
+          .forEach((c) => c.classList.remove("active"));
+      }
+      if (!e.target.closest(".fact-slide")) {
+        document
+          .querySelectorAll(".fact-slide")
+          .forEach((s) => s.classList.remove("active"));
+      }
     });
   }
   const starMap = new StarDateMap("starCanvas");
@@ -691,86 +808,5 @@ document.addEventListener("DOMContentLoaded", () => {
     if (zodiacDateInput.value) updateZodiacDisplay(zodiacDateInput.value);
     else alert("Введите дату");
   });
-
-  // Данные для слайдера фактов (перенесены сюда, чтобы не дублировать)
-  const factsData = [
-    {
-      title: "Чёрная дыра",
-      desc: "Гравитация настолько сильна, что даже свет не может покинуть её пределы.",
-      localFile: "black-hole.jpg",
-    },
-    {
-      title: "Сверхновая",
-      desc: "Взрыв звезды в конце её жизни, временно затмевающий целую галактику.",
-      localFile: "stars-new.jpg",
-    },
-    {
-      title: "Столпы Творения",
-      desc: "Облака газа в Орлиной туманности, где рождаются новые звёзды.",
-      localFile: "stolbi.jpg",
-    },
-    {
-      title: "Туманность Ориона",
-      desc: "Ближайший к нам звёздный питомник, видимый невооружённым глазом.",
-      localFile: "Orion_Nebula_-_Hubble_2006_mosaic_18000.jpg",
-    },
-    {
-      title: "Галактика Андромеды",
-      desc: "Ближайшая крупная галактика, удалена на 2.5 млн световых лет.",
-      localFile: "Andromeda.jpg",
-    },
-    {
-      title: "Кольца Сатурна",
-      desc: "Состоят из водяного льда и камней, толщина до 1 км.",
-      localFile: "saturn-rings.jpg",
-    },
-    {
-      title: "Экзопланета",
-      desc: "Планеты за пределами Солнечной системы, некоторые пригодны для жизни.",
-      localFile: "Exzoplanete.jpg",
-    },
-    {
-      title: "Гамма-всплески",
-      desc: "Самые мощные взрывы во Вселенной после Большого взрыва.",
-      localFile: "GAMMA.jpg",
-    },
-    {
-      title: "Марсианский закат",
-      desc: "Закат на Марсе имеет голубоватый оттенок из-за рассеяния пыли.",
-      localFile: "Mars.jpg",
-    },
-    {
-      title: "Магеллановы облака",
-      desc: "Карликовые галактики-спутники Млечного Пути, видны в южном полушарии.",
-      localFile: "Magellanic_Clouds.jpg",
-    },
-    {
-      title: "Тёмная материя",
-      desc: "Невидимая субстанция, составляющая 27% массы Вселенной.",
-      localFile: "dark-materia.jpg",
-    },
-    {
-      title: "Квазары",
-      desc: "Ярчайшие ядра далёких галактик, питаемые сверхмассивными чёрными дырами.",
-      localFile: "qvasar.jpg",
-    },
-    {
-      title: "Нейтронная звезда",
-      desc: "Останки сверхновой, размером с город, но массой как Солнце.",
-      localFile: "Neutrone-stars.jpg",
-    },
-    {
-      title: "Большой аттрактор",
-      desc: "Гравитационная аномалия, притягивающая наш Млечный Путь.",
-      localFile: "Attraktor.jpg",
-    },
-    {
-      title: "Звезда Бетельгейзе",
-      desc: "Красный сверхгигант в созвездии Ориона, одна из самых больших известных звёзд.",
-      localFile: "Betelgeise.jpg",
-    },
-  ];
-  const placeholderSVG =
-    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%231e1e3a'/%3E%3Ccircle cx='200' cy='150' r='60' fill='%23a855f7' opacity='0.6'/%3E%3Ctext x='200' y='160' font-size='20' fill='white' text-anchor='middle' font-family='monospace'%3E🌟%3C/text%3E%3Ctext x='200' y='200' font-size='14' fill='%23cbd5e1' text-anchor='middle'%3EИзображение недоступно%3C/text%3E%3C/svg%3E";
-  new FactsSlider("factsSlider", "sliderDots", factsData, placeholderSVG);
+  new FactsSlider("factsSlider", "sliderDots");
 });
