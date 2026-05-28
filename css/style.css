@@ -766,3 +766,13 @@ footer {
     scroll-snap-type: x mandatory;
   }
 }
+
+/* Прелоадер для слайдера (опционально) */
+.facts-slider.loading {
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 1.8rem;
+}
